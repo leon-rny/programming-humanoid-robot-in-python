@@ -53,9 +53,9 @@ You can try ipython notebooks that I used in the lecture by starting ```ipython 
 	* [learn how to use simspark](https://gitlab.com/robocup-sim/SimSpark/-/wikis/Monitor)
 
 2. start a console (cmd in windows)
-3. go to the *software_installtion* source code folder
+3. go to the *software_installation* source code folder
 ```
-cd software_installtion
+cd software_installation
 ```
 
 4. start sample agent:
