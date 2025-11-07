@@ -274,7 +274,6 @@ class SparkAgent(object):
             self.thread.daemon = True
             self.thread.start()
 
-
 if '__main__' == __name__:
     agent = SparkAgent()
     agent.run()
