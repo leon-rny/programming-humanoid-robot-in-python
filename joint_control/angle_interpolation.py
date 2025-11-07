@@ -19,10 +19,8 @@
     # preceding the point, the second describes the curve following the point.
 '''
 
-
 from pid import PIDAgent
 from keyframes import hello
-
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -32,20 +30,70 @@ class AngleInterpolationAgent(PIDAgent):
                  sync_mode=True):
         super(AngleInterpolationAgent, self).__init__(simspark_ip, simspark_port, teamname, player_id, sync_mode)
         self.keyframes = ([], [], [])
+        self.startTime = -1
 
     def think(self, perception):
         target_joints = self.angle_interpolation(self.keyframes, perception)
-        target_joints['RHipYawPitch'] = target_joints['LHipYawPitch'] # copy missing joint in keyframes
+        #target_joints['RHipYawPitch'] = target_joints['LHipYawPitch'] # copy missing joint in keyframes
         self.target_joints.update(target_joints)
         return super(AngleInterpolationAgent, self).think(perception)
 
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
-        # YOUR CODE HERE
+        if(self.keyframes == ([],[],[])):
+            return target_joints
+        
+        if(self.startTime == -1):
+            self.startTime = perception.time
+            self.startAngles = dict(perception.joint) 
+        curr_Time = perception.time - self.startTime
+ 
+        names, times, keys = keyframes
+        
+        finished_joints = 0
+        for (m, name) in enumerate(names):
+            kframe = 0
+            minTime = 0
+            maxTime = 0    
+            jointTimes = times[m]    
+                             
+            if (jointTimes[-1] < curr_Time):
+                finished_joints += 1
+                if(finished_joints == len(names)):
+                    self.startTime = -1
+                    self.keyframes = ([],[],[])
+                continue
+            
+            for n in range(len(jointTimes)):
+                maxTime = jointTimes[n]
+                
+                if ((minTime <= curr_Time and curr_Time <= maxTime)): 
+                    kframe = n
+                    break
+                minTime = maxTime
+            
+            i = (curr_Time - minTime) / (maxTime - minTime)
+            
+            if (kframe == 0):
+                p0 = 0
+                p1 = 0
+                p3 = keys[m][kframe][0]
+                p2 = p3 + keys[m][kframe][1][2]
 
+            else:
+                p0 = keys[m][kframe-1][0]
+                p1 = p0 + keys[m][kframe-1][2][2]
+                p3 = keys[m][kframe][0]
+                p2 = p3 + keys[m][kframe][1][2]
+            
+            # Bezier formula
+            angle = ((1 - i)**3)* p0 + 3*i *((1 - i)**2) * p1 + 3*(i**2) * (1-i) * p2 + (i**3) * p3
+            target_joints[name] = angle
+            if 'LHipYawPitch' in target_joints:
+                target_joints['RHipYawPitch'] = target_joints['LHipYawPitch']
         return target_joints
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = hello()
     agent.run()
