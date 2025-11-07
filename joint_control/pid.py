@@ -18,7 +18,6 @@ import numpy as np
 from collections import deque
 from spark_agent import SparkAgent, JOINT_CMD_NAMES
 
-
 class PIDController(object):
     '''a discretized PID controller, it controls an array of servos,
        e.g. input is an array and output is also an array
@@ -33,11 +32,11 @@ class PIDController(object):
         self.u = np.zeros(size)
         self.e1 = np.zeros(size)
         self.e2 = np.zeros(size)
-        # ADJUST PARAMETERS BELOW
+        # pid settings
         delay = 0
-        self.Kp = 0
-        self.Ki = 0
-        self.Kd = 0
+        self.Kp = 20
+        self.Ki = 0.6
+        self.Kd = 0.1
         self.y = deque(np.zeros(size), maxlen=delay + 1)
 
     def set_delay(self, delay):
@@ -52,10 +51,19 @@ class PIDController(object):
         @param sensor: current values from sensor
         @return control signal
         '''
-        # YOUR CODE HERE
+        e = target - sensor       
+        self.u +=  (self.Kp + self.Ki * self.dt + self.Kd / self.dt) * e - (self.Kp +(2 * self.Kd) / self.dt) * self.e1 + (self.Kd / self.dt) * self.e2
+        
+        # update values
+        self.e2 = self.e1.copy()
+        self.e1 = e.copy()
+        
+        # calculate speed and prediction
+        speed = ((self.u - sensor) + (self.y.popleft() - sensor)) / (2 * self.dt)
+        prediction = self.u + speed * self.dt
+        self.y.append(prediction)
 
         return self.u
-
 
 class PIDAgent(SparkAgent):
     def __init__(self, simspark_ip='localhost',
@@ -81,7 +89,6 @@ class PIDAgent(SparkAgent):
         u = self.joint_controller.control(target_angles, joint_angles)
         action.speed = dict(zip(JOINT_CMD_NAMES.keys(), u))  # dict: joint_id -> speed
         return action
-
 
 if __name__ == '__main__':
     agent = PIDAgent()
