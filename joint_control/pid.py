@@ -51,9 +51,14 @@ class PIDController(object):
         @param sensor: current values from sensor
         @return control signal
         '''
-        e = target - sensor       
-        self.u +=  (self.Kp + self.Ki * self.dt + self.Kd / self.dt) * e - (self.Kp +(2 * self.Kd) / self.dt) * self.e1 + (self.Kd / self.dt) * self.e2
+        e = target - sensor
+
+        p = (self.Kp + self.Ki * self.dt + self.Kd / self.dt) * e
+        i = (self.Kp +(2 * self.Kd) / self.dt) * self.e1
+        d = (self.Kd / self.dt) * self.e2
         
+        self.u +=  p - i + d
+
         # update values
         self.e2 = self.e1.copy()
         self.e1 = e.copy()

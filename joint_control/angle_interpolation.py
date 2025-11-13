@@ -89,8 +89,11 @@ class AngleInterpolationAgent(PIDAgent):
             # Bezier formula
             angle = ((1 - i)**3)* p0 + 3*i *((1 - i)**2) * p1 + 3*(i**2) * (1-i) * p2 + (i**3) * p3
             target_joints[name] = angle
+
+            # take care of the joint RHipYawPitch
             if 'LHipYawPitch' in target_joints:
                 target_joints['RHipYawPitch'] = target_joints['LHipYawPitch']
+                
         return target_joints
 
 if __name__ == '__main__':
